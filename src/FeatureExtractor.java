@@ -31,18 +31,18 @@ public class FeatureExtractor {
 	
 	public FeatureExtractor() {
 		classifierFiles = new String[] {
-								leftEyeClassifier, 
-								rightEyeClassifier, 
-								noseClassifier,
-								mouthClassifier,	//Need to fix.
-								mouthNoseClassifier};	//Need to fix.
+				leftEyeClassifier, 
+				rightEyeClassifier, 
+				noseClassifier,
+				mouthClassifier,	//Need to fix.
+				mouthNoseClassifier};	//Need to fix.
 
 		dimensions = new CvSize[] {
-							cvSize(40, 40),	//left
-							cvSize(40, 40),	//right
-							cvSize(60, 70),	//nose
-							cvSize(90, 60),	//mouth
-							cvSize(95, 120)};	//noseMouth
+				cvSize(40, 40),	//left
+				cvSize(40, 40),	//right
+				cvSize(60, 70),	//nose
+				cvSize(90, 60),	//mouth
+				cvSize(95, 120)};	//noseMouth
 	}
 	
 	public void start() {
@@ -96,10 +96,10 @@ public class FeatureExtractor {
 		
 		for(Rect rect: featureDetections.toArray()) {
 			Core.rectangle(
-						image, 
-						new Point(rect.x, rect.y), 
-						new Point(rect.x + rect.width, rect.y + rect.height),
-						new Scalar(0, 255, 0));	//Draws green rectangle.
+					image, 
+					new Point(rect.x, rect.y), 
+					new Point(rect.x + rect.width, rect.y + rect.height),
+					new Scalar(0, 255, 0));	//Draws green rectangle.
 			
 			System.out.println(String.format("Writing feature to %s.", filename));
 			Highgui.imwrite(filename, image);
