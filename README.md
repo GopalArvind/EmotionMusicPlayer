@@ -1,9 +1,9 @@
-Emotion Based Music Player
+<h1>Emotion Based Music Player</h1>
 
 This project is a basic implementation of a music player which builds a playlist for the users based on their emotion at the time.
 The emotion detection is done by extracting certain features from the facial image of the user, the details of which will be explained as the project progresses.
 
-How does the FeatureExtractor work?
+<h3>How does the FeatureExtractor work?</h3>
 
 FeatureExtractor is the class which is used to get all the features required for the emotion detection.
 First, an array is initialized to store all the classifier xml files and the dimensions of the images of the features. The start method is where the class starts doing its stuff.
@@ -23,4 +23,4 @@ If you have any bugs or issues, just raise a bug in the git repository. This wil
 
 More details will be added to this readme file (and some, removed from the file) as the project progresses.
 
-P. S. You will need JavaCV and OpenCV 2.4 to run this project.
+<em>P. S. You will need JavaCV and OpenCV 2.4 to run this project.</em>
