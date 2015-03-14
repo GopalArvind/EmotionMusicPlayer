@@ -1,10 +1,17 @@
 /*
- * First get face.
- * Left eye, if more than one image, discard features not in 1st quadrant.
- * Do that for the rest.
+ * First get face. DONE
+ * Left eye, if more than one image, discard features not in 1st quadrant. Karthik.
+ * Do that for the rest. 
  * For nose, use full face. Should be close to origin.
  * Mouth in third AND fourth quadrant!!
  * Don't try to pass single quadrant sub images, THEY DO NOT WORK!
+ * 
+ * Get image from camera.	Gopal.
+ * Play music. Try to stream from other webpages.	Akash.
+ * Mean, Co-variance, eigen values and vectors. IMPORTANT!! GET THE RIGHT EIGEN FUNCTION!
+ * Store the eigen values and vectors. (Save obj)
+ * Most important, comparing images.
+ * 
  */
 
 
@@ -19,7 +26,7 @@ import static org.bytedeco.javacpp.opencv_highgui.cvSaveImage;
 import static org.bytedeco.javacpp.opencv_imgproc.cvResize;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.HashMap;
 
 import org.bytedeco.javacpp.opencv_core.CvSize;
 import org.bytedeco.javacpp.opencv_core.IplImage;
@@ -68,7 +75,7 @@ public class FeatureExtractor {
 				cvSize(90, 60),	//mouth
 				cvSize(95, 120)};	//noseMouth
 		
-		partsOfFace = new Rect[4];
+		//partsOfFace = new Rect[4];
 		
 		createDirectory(testImagesLoc);
 		createDirectory(cacheLoc);
@@ -86,7 +93,7 @@ public class FeatureExtractor {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.out.println("Running FaceDetector");
         
-        Mat image = Highgui.imread(testImagesLoc + "WP_20150124_13_35_53_Pro.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+        Mat image = Highgui.imread(testImagesLoc + "12.jpg", CV_LOAD_IMAGE_GRAYSCALE);
         faceWithFeatures = image; 
         MatOfRect faceDetections = detectFeature(classifierLoc + faceClassifier, image);
         System.out.println(String.format("Detected %s faces.", faceDetections.toArray().length));
@@ -154,14 +161,64 @@ public class FeatureExtractor {
 		
 		MatOfRect featureDetections = new MatOfRect();
 		featureDetector.detectMultiScale(image, featureDetections);
+		featureDetections = validateFeatures(classifier, image, featureDetections);
 		
 		saveFeatures(featureDetections, image);
 		
 		return featureDetections;
 	}
 	
+	public MatOfRect validateFeatures(String classifier, Mat image, MatOfRect featureDetections) {
+		MatOfRect validFeatures = new MatOfRect();
+		int maxDist = 5000;	//Assuming this as screen can't have more resolution than this.
+		Mat validFeature = null;	//Could cause problems.
+		
+		for(Rect rect: featureDetections.toArray()) {
+			if(classifier.equals(faceClassifier)) {
+				validFeatures.push_back(image);
+			}
+			else if(classifier.equals(leftEyeClassifier)) {
+				//Check if feature is in correct quadrant and add to validFeatures.
+				if(rect.x <= image.width()/2 && rect.y <= image.height()/2) {	//Considering only the left-most point for now.
+					validFeatures.push_back(image.submat(rect));
+				}
+			}
+			else if(classifier.equals(rightEyeClassifier)) {
+				if(rect.x >= image.width()/2 && rect.y <= image.height()/2) {
+					validFeatures.push_back(image.submat(rect));
+				}
+			}
+			else if(classifier.equals(noseClassifier)) {
+				int d = (int) (Math.sqrt(Math.pow(rect.x  + rect.width/2 - image.width()/2, 2) + Math.pow(rect.y + rect.height/2 - image.height()/2, 2))); //Distance formula.
+				//Picks the nose which is closest to center of face.
+				if(d < maxDist) {
+					maxDist = d;
+					validFeature =  image.submat(rect);
+				}
+			}
+			else if(classifier.equals(mouthClassifier)) {
+				int d = (int) (Math.sqrt(Math.pow(rect.x + rect.width/2 - image.width()/2, 2) + Math.pow(rect.y + rect.height/2 - image.height()*(3/4), 2)));
+				//Picks mouth which is closest to center of bottom of face.
+				if(d < maxDist) {
+					maxDist = d;
+					validFeature = image.submat(rect);
+				}
+			}
+			else if(classifier.equals(mouthClassifier)) {
+				//Nothing to add here as of now.
+			}
+		}
+		
+		if(classifier.equals(noseClassifier) || classifier.equals(mouthClassifier)) {
+			validFeatures.push_back(validFeature);
+		}
+		
+		return validFeatures;
+	}
+	
 	public void saveFeatures(MatOfRect featureDetections, Mat image) {	//Must Change. :(
 		System.out.println(String.format("Detected %s features.", featureDetections.toArray().length));
+		boolean valid = false;
 		
 		for(Rect rect: featureDetections.toArray()) {
 			String filename = cacheLoc + FeatureExtractor.featureCount + ".png";
