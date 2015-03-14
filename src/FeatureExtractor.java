@@ -26,7 +26,7 @@ import static org.bytedeco.javacpp.opencv_highgui.cvSaveImage;
 import static org.bytedeco.javacpp.opencv_imgproc.cvResize;
 
 import java.io.File;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 import org.bytedeco.javacpp.opencv_core.CvSize;
 import org.bytedeco.javacpp.opencv_core.IplImage;
@@ -93,9 +93,9 @@ public class FeatureExtractor {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.out.println("Running FaceDetector");
         
-        Mat image = Highgui.imread(testImagesLoc + "12.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+        Mat image = Highgui.imread(testImagesLoc + "5.jpg", CV_LOAD_IMAGE_GRAYSCALE);
         faceWithFeatures = image; 
-        MatOfRect faceDetections = detectFeature(classifierLoc + faceClassifier, image);
+        MatOfRect faceDetections = detectFeature(faceClassifier, image);
         System.out.println(String.format("Detected %s faces.", faceDetections.toArray().length));
         
         extractFeatures(faceDetections, image, -1);		//Plan this. This method may have to return stuff in the future according to requirements.
@@ -140,7 +140,7 @@ public class FeatureExtractor {
 					System.out.println("Using classifier: " + classifier);
 					//Add code to fix faulty classifiers here (mount, mouthNose)
 					
-					MatOfRect features = detectFeature(classifierLoc + classifier, subImage);
+					MatOfRect features = detectFeature(classifier, subImage);
 					counter++;
 					
 					extractFeatures(features, subImage, counter);	//Feature extracted is not face, cuz counter > 0. Functionality in next level of recursion, in else block.
@@ -157,7 +157,7 @@ public class FeatureExtractor {
 	}
 	
 	public MatOfRect detectFeature(String classifier, Mat image) {
-		CascadeClassifier featureDetector = new CascadeClassifier(classifier);
+		CascadeClassifier featureDetector = new CascadeClassifier(classifierLoc + classifier);
 		
 		MatOfRect featureDetections = new MatOfRect();
 		featureDetector.detectMultiScale(image, featureDetections);
@@ -170,22 +170,29 @@ public class FeatureExtractor {
 	
 	public MatOfRect validateFeatures(String classifier, Mat image, MatOfRect featureDetections) {
 		MatOfRect validFeatures = new MatOfRect();
+		ArrayList<Rect> featureRects = new ArrayList<Rect>();
 		int maxDist = 5000;	//Assuming this as screen can't have more resolution than this.
-		Mat validFeature = null;	//Could cause problems.
+		Rect validFeature = null;	//Could cause problems.
 		
 		for(Rect rect: featureDetections.toArray()) {
 			if(classifier.equals(faceClassifier)) {
-				validFeatures.push_back(image);
+				System.out.println("face:" + classifier);
+//				validFeatures.push_back(rect);
+				featureRects.add(rect);
 			}
 			else if(classifier.equals(leftEyeClassifier)) {
 				//Check if feature is in correct quadrant and add to validFeatures.
 				if(rect.x <= image.width()/2 && rect.y <= image.height()/2) {	//Considering only the left-most point for now.
-					validFeatures.push_back(image.submat(rect));
+//					validFeatures.push_back(rect);
+					System.out.println("left:" + classifier);
+					featureRects.add(rect);
 				}
 			}
 			else if(classifier.equals(rightEyeClassifier)) {
 				if(rect.x >= image.width()/2 && rect.y <= image.height()/2) {
-					validFeatures.push_back(image.submat(rect));
+//					validFeatures.push_back(rect);
+					System.out.println("right:" + classifier);
+					featureRects.add(rect);
 				}
 			}
 			else if(classifier.equals(noseClassifier)) {
@@ -193,15 +200,19 @@ public class FeatureExtractor {
 				//Picks the nose which is closest to center of face.
 				if(d < maxDist) {
 					maxDist = d;
-					validFeature =  image.submat(rect);
+					validFeature =  rect;
+					System.out.println("nose:" + classifier);
 				}
 			}
 			else if(classifier.equals(mouthClassifier)) {
-				int d = (int) (Math.sqrt(Math.pow(rect.x + rect.width/2 - image.width()/2, 2) + Math.pow(rect.y + rect.height/2 - image.height()*(3/4), 2)));
-				//Picks mouth which is closest to center of bottom of face.
-				if(d < maxDist) {
-					maxDist = d;
-					validFeature = image.submat(rect);
+				if(rect.y >= image.height()/2) {
+					int d = (int) (Math.sqrt(Math.pow(rect.x + rect.width/2 - image.width()/2, 2) + Math.pow(rect.y + rect.height/2 - image.height()*(3/4), 2)));
+					//Picks mouth which is closest to center of bottom of face.
+					if(d < maxDist) {
+						maxDist = d;
+						validFeature = rect;
+						System.out.println("mouth:" + classifier);
+					}
 				}
 			}
 			else if(classifier.equals(mouthClassifier)) {
@@ -209,10 +220,12 @@ public class FeatureExtractor {
 			}
 		}
 		
-		if(classifier.equals(noseClassifier) || classifier.equals(mouthClassifier)) {
-			validFeatures.push_back(validFeature);
+		if(validFeature != null && (classifier.equals(noseClassifier) || classifier.equals(mouthClassifier))) {
+//			validFeatures.push_back(validFeature);
+			featureRects.add(validFeature);
 		}
 		
+		validFeatures.fromList(featureRects);
 		return validFeatures;
 	}
 	
