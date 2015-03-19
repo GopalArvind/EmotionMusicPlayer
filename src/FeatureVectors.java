@@ -3,22 +3,43 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 
-public class FeatureVectors {
+public class FeatureVectors implements Serializable {
 	private double[][] leftEye, rightEye;	//Eigen vectors
 	private double[][] nose, mouth;
-	private double[][] noseMouth;
+	private double[][] mouthNose;
 	private String emotion;
 	
-	private static int objCount = -1;
+	private int objCount = 0;
 	
 	public FeatureVectors(String emotion) {
 		this.emotion = emotion;
-		objCount++;
+		File file = new File(FeatureExtractor.vectorsFileLoc);
+		objCount = file.list().length;
 	}
 	
-	public void setLetEye(double[][] leftEye) {
+	public void setVectors(String feature, double[][] eigenVectors) {
+		if(feature.equalsIgnoreCase("lefteye.png")) {
+			leftEye = eigenVectors;
+		}
+		else if(feature.equalsIgnoreCase("righteye.png")) {
+			rightEye = eigenVectors;
+		}
+		else if(feature.equalsIgnoreCase("nose.png")) {
+			nose = eigenVectors;
+		}
+		else if(feature.equalsIgnoreCase("mouth.png")) {
+			mouth = eigenVectors;
+		}
+		else if(feature.equalsIgnoreCase("mouthnose.png")) {
+			mouthNose = eigenVectors;
+		}
+	}
+	
+	//Can remove separate setter methods.
+/*	public void setLetEye(double[][] leftEye) {
 		this.leftEye = leftEye;
 	}
 	
@@ -34,10 +55,10 @@ public class FeatureVectors {
 		this.mouth = mouth;
 	}
 	
-	public void setNoseMouth(double[][] noseMouth) {
-		this.noseMouth = noseMouth;
+	public void setNoseMouth(double[][] mouthNose) {
+		this.mouthNose = mouthNose;
 	}
-	
+*/	
 	public double[][] getLeftEye() {
 		return leftEye;
 	}
@@ -54,13 +75,18 @@ public class FeatureVectors {
 		return mouth;
 	}
 	
-	public double[][] getNoseMouth() {
-		return noseMouth;
+	public double[][] getMouthNose() {
+		return mouthNose;
+	}
+	
+	public String getEmotion() {
+		return emotion;
 	}
 	
 	public void saveObject() {
 		try {
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FeatureExtractor.vectorsFileLoc + emotion + "/" + objCount + ".data"));
+//			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FeatureExtractor.vectorsFileLoc + emotion + "/" + objCount + ".data"));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FeatureExtractor.vectorsFileLoc + objCount + ".data"));
 			oos.writeObject(this);
 			oos.close();
 		} catch(Exception e) {
@@ -74,6 +100,7 @@ public class FeatureVectors {
 		try {
 			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
 			objToReturn = (FeatureVectors) ois.readObject();
+			ois.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

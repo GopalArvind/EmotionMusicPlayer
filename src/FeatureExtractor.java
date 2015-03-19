@@ -59,6 +59,7 @@ public class FeatureExtractor {
 	private Rect[] partsOfFace;
 	private static int featureCount = 0;
 	private String[] emotions;
+	private String[] features;
 	
 	private Mat faceWithFeatures;
 	
@@ -67,19 +68,26 @@ public class FeatureExtractor {
 				leftEyeClassifier, 
 				rightEyeClassifier, 
 				noseClassifier,
-				mouthClassifier,	//Need to fix.
-				mouthNoseClassifier};	//Need to fix.
+				mouthClassifier};	//Need to fix.
+	//			mouthNoseClassifier};	//Need to fix.
 
 		dimensions = new CvSize[] {
 				cvSize(40, 40),	//left
 				cvSize(40, 40),	//right
 				cvSize(60, 70),	//nose
-				cvSize(90, 60),	//mouth
-				cvSize(95, 120)};	//noseMouth
+				cvSize(90, 60)};	//mouth
+	//			cvSize(95, 120)};	//noseMouth
 		
 		emotions = new String[] {
 				"Happy",
 				"Sad"};
+		
+		features = new String[] {
+				"LeftEye",
+				"RightEye",
+				"Nose",
+				"Mouth"};
+	//			"MouthNose"};
 		
 		//partsOfFace = new Rect[4];
 		
@@ -88,9 +96,10 @@ public class FeatureExtractor {
 		createDirectory(outputLoc);
 		createDirectory(vectorsFileLoc);
 		
-		for(String emotion: emotions) {
+/*		for(String emotion: emotions) {
 			createDirectory(vectorsFileLoc + emotion + "/");
 		}
+*/
 	}
 	
 	public void createDirectory(String directory) {
@@ -100,11 +109,12 @@ public class FeatureExtractor {
 		}
 	}
 	
-	public void start() {
+	public void start(String imagePath) {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.out.println("Running FaceDetector");
         
-        Mat image = Highgui.imread(testImagesLoc + "webcam-toy-photo4.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+//        Mat image = Highgui.imread(testImagesLoc + "webcam-toy-photo4.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+        Mat image = Highgui.imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
         faceWithFeatures = image; 
         MatOfRect faceDetections = detectFeature(faceClassifier, image);
         System.out.println(String.format("Detected %s faces.", faceDetections.toArray().length));
@@ -162,7 +172,8 @@ public class FeatureExtractor {
 				IplImage destination = cvCreateImage(dimensions[counter], IPL_DEPTH_8U, source.nChannels());
 				cvResize(source, destination);
 				
-				cvSaveImage("Output/" + classifierFiles[counter].substring(0, classifierFiles[counter].length() - 3) + "png", destination);
+//				cvSaveImage("Output/" + classifierFiles[counter].substring(0, classifierFiles[counter].length() - 3) + "png", destination);
+				cvSaveImage(outputLoc + features[counter] + ".png", destination);	//Feature filenames will be more meaningful now.
 			}
 		}
 	}
@@ -274,6 +285,6 @@ public class FeatureExtractor {
 	}
 	
 	public static void main(String[] args) {	//Temporary. Will be called by some code on server.
-		new FeatureExtractor().start();
+//		new FeatureExtractor().start();
 	}
 }
