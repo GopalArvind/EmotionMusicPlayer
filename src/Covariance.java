@@ -71,11 +71,9 @@ double columnMean[];
 		System.out.println("covariance claculated");
 		double eigen[][]=EigenVector.getEigen(covariance,cols);
 		//FROM EIGEN GET 5 SIGNIFICANT VECTORS AND STORE THEM IN A FILE. FOR EACH EMOTION STORE THE EIGEN VECTORS IN A FILE.
-		saveValues(eigen, emotion);
-	}
-	
-	public void saveValues(double eigen[][], String emotion) {
 		
+		
+		//Make an instance of FeatureVectors and call save method on it.
 	}
 
 	private void getColumnMean(int cols,int rows) {
