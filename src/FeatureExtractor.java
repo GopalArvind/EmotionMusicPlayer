@@ -109,10 +109,19 @@ public class FeatureExtractor {
 		}
 	}
 	
+	public void clearDirectory(String directory) {
+		File file = new File(directory);
+		for(File image: file.listFiles()) {
+			image.delete();
+		}
+	}
+	
 	public void start(String imagePath) {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.out.println("Running FaceDetector");
         
+        clearDirectory(cacheLoc);
+        clearDirectory(outputLoc);
 //        Mat image = Highgui.imread(testImagesLoc + "webcam-toy-photo4.jpg", CV_LOAD_IMAGE_GRAYSCALE);
         Mat image = Highgui.imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
         faceWithFeatures = image; 
@@ -284,7 +293,8 @@ public class FeatureExtractor {
 //		FeatureExtractor.featureCount++;
 	}
 	
-	public static void main(String[] args) {	//Temporary. Will be called by some code on server.
+/*	public static void main(String[] args) {	//Temporary. Will be called by some code on server.
 //		new FeatureExtractor().start();
 	}
+*/
 }
