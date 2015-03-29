@@ -122,7 +122,7 @@ public class GuiComponent {
 		frame.setVisible(true);
 	}
 	
-	public void showResult(String emotion) {
+	public void showResult(String emotion) {  
 		JFrame result = new JFrame("Result.");
 		result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		result.setSize(400, 200);

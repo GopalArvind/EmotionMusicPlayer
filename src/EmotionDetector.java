@@ -44,8 +44,8 @@ public class EmotionDetector {
 	
 	public void getInput() {
 		//Set user inputs.
-		imagePath = FeatureExtractor.testImagesLoc + "WP_20150124_13_35_53_Pro.jpg";
-		emotion = "Sad";
+	//	imagePath = FeatureExtractor.testImagesLoc + "WP_20150124_13_35_53_Pro.jpg";
+	//	emotion = "Sad";
 	
 		try {
 			synchronized(gui) {
