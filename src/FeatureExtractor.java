@@ -60,6 +60,8 @@ public class FeatureExtractor {
 	private static int featureCount = 0;
 	private String[] emotions;
 	private String[] features;
+	private boolean faceImage;
+	private boolean validImage;
 	
 	private Mat faceWithFeatures;
 	
@@ -96,6 +98,9 @@ public class FeatureExtractor {
 		createDirectory(outputLoc);
 		createDirectory(vectorsFileLoc);
 		
+		faceImage = false;
+		validImage = true;
+		
 /*		for(String emotion: emotions) {
 			createDirectory(vectorsFileLoc + emotion + "/");
 		}
@@ -116,19 +121,63 @@ public class FeatureExtractor {
 		}
 	}
 	
-	public void start(String imagePath) {
+	public boolean start(String imagePath) {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.out.println("Running FaceDetector");
         
         clearDirectory(cacheLoc);
         clearDirectory(outputLoc);
+        
+        faceImage = false;
+        validImage = true;
 //        Mat image = Highgui.imread(testImagesLoc + "webcam-toy-photo4.jpg", CV_LOAD_IMAGE_GRAYSCALE);
         Mat image = Highgui.imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
         faceWithFeatures = image; 
-        MatOfRect faceDetections = detectFeature(faceClassifier, image);
-        System.out.println(String.format("Detected %s faces.", faceDetections.toArray().length));
+       
+        if(imagePath.contains("TF")) {	//WORKAROUND FOR FACE-ONLY IMAGES!
+        	faceImage = true;
+        	
+        	System.out.println("Face Image.");
+        	String filename = cacheLoc + FeatureExtractor.featureCount + ".png";
+			
+			//Writing feature to a new file.
+			System.out.println(String.format("Writing feature to %s.", filename));
+			Highgui.imwrite(filename, image);
+		
+			FeatureExtractor.featureCount++;
+			
+			faceWithFeatures = image.clone();	//Cloning to avoid having rectangles in cropped features.
+			System.out.println("Cloning.");
+			int counter = -1;
+			for(String classifier: classifierFiles) {
+				System.out.println("Using classifier: " + classifier);
+				//Add code to fix faulty classifiers here (mount, mouthNose)
+				
+				MatOfRect features = detectFeature(classifier, image);
+				counter++;
+				
+				if(features.toArray().length < 1) {
+					return false;
+				}
+				
+				extractFeatures(features, image, counter);
+			}
+        }
         
-        extractFeatures(faceDetections, image, -1);		//Plan this. This method may have to return stuff in the future according to requirements.
+        //Old code...
+        else {
+        	MatOfRect faceDetections = detectFeature(faceClassifier, image);
+        	System.out.println(String.format("Detected %s faces.", faceDetections.toArray().length));
+        	
+        	if(faceDetections.toArray().length < 1) {
+        		return false;
+        	}
+        
+        	extractFeatures(faceDetections, image, -1);		//Plan this. This method may have to return stuff in the future according to requirements.
+        }
+        
+        return validImage;
+        
        /*
      //REMOVE!!   
         Rect r = faceDetections.toArray()[0];
@@ -174,6 +223,10 @@ public class FeatureExtractor {
 					counter++;
 					
 					extractFeatures(features, subImage, counter);	//Feature extracted is not face, cuz counter > 0. Functionality in next level of recursion, in else block.
+					
+					if(features.toArray().length < 1) {
+						validImage = false;
+					}
 				}
 			}
 			else {

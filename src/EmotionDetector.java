@@ -1,4 +1,4 @@
-import java.io.Serializable;
+import java.io.File;
 
 import org.opencv.core.Core;
 
@@ -25,7 +25,14 @@ public class EmotionDetector {
 		imagePath = FeatureExtractor.testImagesLoc + imagePath;
 		FeatureExtractor featureExtractor = new FeatureExtractor();
 		System.out.println(imagePath);
-		featureExtractor.start(imagePath);
+		boolean valid = featureExtractor.start(imagePath);
+		if(!valid) {	//If all the features are not detected.
+			System.out.println("Didn't detect all features. Hence skipping this image.");
+			File file = new File(imagePath);
+			File destFile = new File(imagePath.substring(0, imagePath.indexOf('.')) + "_invalid.png");
+			file.renameTo(destFile);
+			return;
+		}
 		Covariance covariance = new Covariance();
 		
 		if(mode.equalsIgnoreCase("training")) {	//Training mode.	
