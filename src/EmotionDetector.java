@@ -23,6 +23,10 @@ public class EmotionDetector {
 	public void start() {
 		getInput();
 		imagePath = FeatureExtractor.testImagesLoc + imagePath;
+		if(!new File(imagePath).exists()) {
+			System.out.println(imagePath + " doesn't exist.");
+			return;
+		}
 		FeatureExtractor featureExtractor = new FeatureExtractor();
 		System.out.println(imagePath);
 		boolean valid = featureExtractor.start(imagePath);
