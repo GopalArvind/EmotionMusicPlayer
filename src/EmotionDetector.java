@@ -13,15 +13,15 @@ public class EmotionDetector {
 	
 	public static void main(String[] args) {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		new EmotionDetector().start();
+		new EmotionDetector().start(false);
 	}
 	
 	public void setEmotion(String emotion) {
 		emotionOfFace = emotion;
 	}
 	
-	public void start() {
-		getInput();
+	public void start(boolean cameraIntegration) {
+		getInput(cameraIntegration);
 		imagePath = FeatureExtractor.testImagesLoc + imagePath;
 		if(!new File(imagePath).exists()) {
 			System.out.println(imagePath + " doesn't exist.");
@@ -48,16 +48,22 @@ public class EmotionDetector {
 			System.out.println("The emotion is: " + emotionOfFace);
 		}
 		
-		if(!mode.equals("Training")) {
+		if(!mode.equals("Training") && !cameraIntegration) {
 			gui.showResult(emotionOfFace);
 		}
 	}
 	
-	public void getInput() {
+	public void getInput(boolean cameraIntegration) {
 		//Set user inputs.
 	//	imagePath = FeatureExtractor.testImagesLoc + "WP_20150124_13_35_53_Pro.jpg";
 	//	emotion = "Sad";
 	
+		if(cameraIntegration) {
+			imagePath = "capture.jpg";
+			mode = "testing";
+			return;
+		}
+		
 		try {
 			synchronized(gui) {
 				gui.showGui();

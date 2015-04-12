@@ -54,6 +54,8 @@ public class Covariance {
 		emotionCount = new HashMap<String, Integer>();
 		emotionCount.put("Happy", 0);
 		emotionCount.put("Sad", 0);
+		emotionCount.put("Neutral", 0);
+		emotionCount.put("Anger", 0);
 		distanceMap = new HashMap<FeatureVectors, ArrayList<double[]>>();
 		String finalEmotion = "";
 		
@@ -78,6 +80,8 @@ public class Covariance {
 		
 		System.out.println("happy = " + emotionCount.get("Happy"));
 		System.out.println("sad = " + emotionCount.get("Sad"));
+		System.out.println("neutral = " + emotionCount.get("Neutral"));
+		System.out.println("anger = " + emotionCount.get("Anger"));
 		return finalEmotion;
 	}
 	
@@ -142,7 +146,7 @@ public class Covariance {
 		//Mouth
 		testImageVectors = testImage.getMouth();
 		trainedImageVectors = trainedImage.getMouth();
-		distanceVector = getDistanceVector(testImageVectors, trainedImageVectors);
+		distanceVector = getDistanceVector2(testImageVectors, trainedImageVectors);
 		distanceVectors.add(distanceVector);
 		System.out.println();//debug
 		/*
@@ -154,6 +158,27 @@ public class Covariance {
 		*/
 		distanceMap.put(trainedImage, distanceVectors);
 	} 
+	
+	public double[] getDistanceVector2(double[][] testImageVectors, double[][] trainedImageVectors) {
+		double squaredSum = 0;
+		double[] distanceVector = new double[testImageVectors.length];
+		
+		for(int i = 0; i < testImageVectors.length; i++) {
+			for(int j = 0; j < testImageVectors[i].length; j++) {
+	//			System.out.println(testImageVectors[i][j] + "\t" + trainedImageVectors[i][j] + "\t" + (testImageVectors[i][j] - trainedImageVectors[i][j]));
+//				squaredSum += Math.pow((testImageVectors[i][j] - trainedImageVectors[i][j]), 2);
+				//T1 is trainedImageVectors[i], H1 is testImageVectors[i]
+				distanceVector[i] += Math.abs((testImageVectors[i][j] - trainedImageVectors[i][j]))/(testImageVectors[i][j] + trainedImageVectors[i][j]);
+			}
+//			distanceVector[i] = Math.sqrt(distanceVector[i]);
+		}
+		
+		for(int i = 0; i < distanceVector.length; i++)
+			System.out.print(distanceVector[i] + "\t");
+		System.out.println();
+		
+		return distanceVector;
+	}
 	
 	public double[] getDistanceVector(double[][] testImageVectors, double[][] trainedImageVectors) {
 		double squaredSum = 0;
@@ -232,13 +257,13 @@ public class Covariance {
 		System.out.println("covariance claculated");
 		double eigen[][]=EigenVector.getEigen(covariance,cols);
 		//FROM EIGEN GET 5 SIGNIFICANT VECTORS AND STORE THEM IN A FILE. FOR EACH EMOTION STORE THE EIGEN VECTORS IN A FILE.
-		int index = cols/5;
+//		int index = cols/5;
 		double finalEigen[][] = new double[5][cols];
 		for(i=0;i<5;i++)
 		{
 			finalEigen[i] = new double[cols];
 		}
-		for(i=0,j=0;i<cols && j < 5;i=i+index,j++)
+		for(i=0,j=0;j < 5;i++,j++)
 		{
 			finalEigen[j] = eigen[i];
 		}

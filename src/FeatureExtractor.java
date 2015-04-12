@@ -62,6 +62,7 @@ public class FeatureExtractor {
 	private String[] features;
 	private boolean faceImage;
 	private boolean validImage;
+	private Rect mouthRect, noseRect;
 	
 	private Mat faceWithFeatures;
 	
@@ -70,15 +71,15 @@ public class FeatureExtractor {
 				leftEyeClassifier, 
 				rightEyeClassifier, 
 				noseClassifier,
-				mouthClassifier};	//Need to fix.
-	//			mouthNoseClassifier};	//Need to fix.
+				mouthClassifier,	//Need to fix.
+				mouthNoseClassifier};	//Need to fix.
 
 		dimensions = new CvSize[] {
 				cvSize(40, 40),	//left
 				cvSize(40, 40),	//right
 				cvSize(60, 70),	//nose
-				cvSize(90, 60)};	//mouth
-	//			cvSize(95, 120)};	//noseMouth
+				cvSize(90, 60),	//mouth
+				cvSize(95, 120)};	//noseMouth
 		
 		emotions = new String[] {
 				"Happy",
@@ -88,8 +89,8 @@ public class FeatureExtractor {
 				"LeftEye",
 				"RightEye",
 				"Nose",
-				"Mouth"};
-	//			"MouthNose"};
+				"Mouth",
+				"MouthNose"};
 		
 		//partsOfFace = new Rect[4];
 		
@@ -218,14 +219,14 @@ public class FeatureExtractor {
 				for(String classifier: classifierFiles) {
 					System.out.println("Using classifier: " + classifier);
 					//Add code to fix faulty classifiers here (mount, mouthNose)
-					
-					MatOfRect features = detectFeature(classifier, subImage);
+					MatOfRect features = detectFeature(classifier, subImage);					
 					counter++;
 					
 					extractFeatures(features, subImage, counter);	//Feature extracted is not face, cuz counter > 0. Functionality in next level of recursion, in else block.
 					
 					if(features.toArray().length < 1) {
 						validImage = false;
+						break;
 					}
 				}
 			}
@@ -244,7 +245,17 @@ public class FeatureExtractor {
 		CascadeClassifier featureDetector = new CascadeClassifier(classifierLoc + classifier);
 		
 		MatOfRect featureDetections = new MatOfRect();
-		featureDetector.detectMultiScale(image, featureDetections);
+		if(classifier.equalsIgnoreCase(mouthNoseClassifier)) {
+			int height = mouthRect.y + mouthRect.height - noseRect.y;
+			Rect r = new Rect(mouthRect.x, noseRect.y, mouthRect.width, height);
+			ArrayList<Rect> tempList = new ArrayList<Rect>();
+			tempList.add(r);
+			featureDetections.fromList(tempList);
+		}
+		else {
+			featureDetector.detectMultiScale(image, featureDetections);
+		}
+		
 		featureDetections = validateFeatures(classifier, image, featureDetections);
 		
 		saveFeatures(featureDetections, image);
@@ -285,6 +296,7 @@ public class FeatureExtractor {
 				if(d < maxDist) {
 					maxDist = d;
 					validFeature =  rect;
+					noseRect = rect;
 					System.out.println("nose:" + classifier);
 				}
 			}
@@ -295,12 +307,15 @@ public class FeatureExtractor {
 					if(d < maxDist) {
 						maxDist = d;
 						validFeature = rect;
+						mouthRect = rect;
 						System.out.println("mouth:" + classifier);
 					}
 				}
 			}
-			else if(classifier.equals(mouthClassifier)) {
+			else if(classifier.equals(mouthNoseClassifier)) {
 				//Nothing to add here as of now.
+				System.out.println("MouthNose: " + classifier);
+				return featureDetections;
 			}
 		}
 		
