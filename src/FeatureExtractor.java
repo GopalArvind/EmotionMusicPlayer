@@ -58,7 +58,7 @@ public class FeatureExtractor {
 	private CvSize[] dimensions;
 	private Rect[] partsOfFace;
 	private static int featureCount = 0;
-	private String[] emotions;
+	public static String[] emotions;
 	private String[] features;
 	private boolean faceImage;
 	private boolean validImage;
@@ -83,7 +83,9 @@ public class FeatureExtractor {
 		
 		emotions = new String[] {
 				"Happy",
-				"Sad"};
+				"Sad",
+				"Anger",
+				"Neutral"};
 		
 		features = new String[] {
 				"LeftEye",

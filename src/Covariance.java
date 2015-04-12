@@ -52,10 +52,13 @@ public class Covariance {
 		}
 		
 		emotionCount = new HashMap<String, Integer>();
-		emotionCount.put("Happy", 0);
-		emotionCount.put("Sad", 0);
-		emotionCount.put("Neutral", 0);
-		emotionCount.put("Anger", 0);
+		for(String emotion: FeatureExtractor.emotions) {
+			emotionCount.put(emotion, 0);
+		}
+//		emotionCount.put("Happy", 0);
+//		emotionCount.put("Sad", 0);
+//		emotionCount.put("Neutral", 0);
+//		emotionCount.put("Anger", 0);
 		distanceMap = new HashMap<FeatureVectors, ArrayList<double[]>>();
 		String finalEmotion = "";
 		
@@ -78,10 +81,13 @@ public class Covariance {
 			e.printStackTrace();
 		}
 		
-		System.out.println("happy = " + emotionCount.get("Happy"));
-		System.out.println("sad = " + emotionCount.get("Sad"));
-		System.out.println("neutral = " + emotionCount.get("Neutral"));
-		System.out.println("anger = " + emotionCount.get("Anger"));
+		for(String emotion: FeatureExtractor.emotions) {
+			System.out.println(emotion + " = " + emotionCount.get(emotion));
+		}
+//		System.out.println("happy = " + emotionCount.get("Happy"));
+//		System.out.println("sad = " + emotionCount.get("Sad"));
+//		System.out.println("neutral = " + emotionCount.get("Neutral"));
+//		System.out.println("anger = " + emotionCount.get("Anger"));
 		return finalEmotion;
 	}
 	
