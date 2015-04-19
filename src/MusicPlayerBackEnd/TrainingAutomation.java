@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.opencv.core.Core;
@@ -14,6 +15,7 @@ public class TrainingAutomation {
 	private String datasetFilename;
 	private boolean training = false;
 	private HashMap<String, String> imageEmotionMap, resultMap;
+	public static ArrayList<FeatureVectors> vectorsList;
 	private int pass = 0, fail = 0;
 	PrintWriter err;
 	
@@ -28,6 +30,16 @@ public class TrainingAutomation {
 		}
 		else {
 			datasetFilename = "TestingDataset.txt";
+		}
+		loadVectorsList();
+	}
+	
+	public static void loadVectorsList() {
+		File vectorFilesLoc = new File(FeatureExtractor.vectorsFileLoc);
+		vectorsList = new ArrayList<FeatureVectors>();
+		for(File file: vectorFilesLoc.listFiles()) {
+			FeatureVectors trainedImage = (FeatureVectors) FeatureVectors.loadObject(file);
+			vectorsList.add(trainedImage);
 		}
 	}
 	
@@ -88,11 +100,47 @@ public class TrainingAutomation {
 			resultMap.put(image, emotionOfFace);
 		}
 		long endTime = System.currentTimeMillis();
-		System.out.println("\n\nTime taken = " + ((endTime - startTime)/1000) + " sec");
-		saveTestResult();
+		long timeTaken = (endTime - startTime)/1000;
+		System.out.println("\n\nTime taken = " + timeTaken + " sec");
+//		saveTestResult();
+		saveTestResultHtml(timeTaken, pass, fail);
 		System.out.println("Pass = " + pass + "\tFail = " + fail);
 	
 		System.out.println("\n\nEnd of automation.");
+	}
+	
+	public void saveTestResultHtml(long timeTaken, int pass, int fail) throws Exception {
+		StringBuffer htmlReport = new StringBuffer("<html><title>Testcase Report</title><body>");
+		htmlReport.append("<h1>TEST CASES!</h1><br>Time taken = " + timeTaken + " sec<br>");
+		htmlReport.append("PASS: " + pass + "<br>FAIL: " + fail + "<br>");
+		
+		String saveFile;
+		if(training) {
+			saveFile = "Output_Training.html";
+		}
+		else {
+			saveFile = "Output_Testing.html";
+		}
+		
+		htmlReport.append("<table border='1' style='width:100%'><tr><th>File</th><th>Expected</th><th>Observed</th>");
+		PrintWriter pw = new PrintWriter(saveFile);
+		for(String image: resultMap.keySet()) {
+			String result = resultMap.get(image);
+			String color;
+			if(result.startsWith("Pass")) {
+				color = "#00FF00";
+			}
+			else {
+				color = "#FF0000";
+			}
+			htmlReport.append("<tr bgcolor='" + color + "'><td>" + image + "</td><td>" + imageEmotionMap.get(image) + "</td><td>" + resultMap.get(image) + "</td></tr>");
+		}
+		htmlReport.append("</table>");
+		htmlReport.append("</body></html>");
+		
+		pw.println(htmlReport.toString());
+		pw.flush();
+		pw.close();
 	}
 	
 	public void saveTestResult() throws Exception {
