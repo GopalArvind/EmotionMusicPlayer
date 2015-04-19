@@ -1,6 +1,6 @@
 package MusicPlayerBackEnd;
-
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -45,7 +45,7 @@ public class Covariance {
 		
 		double[][] eigenVectors;
 		FeatureVectors testImage = new FeatureVectors("");
-		FeatureVectors trainedImage;
+//		FeatureVectors trainedImage;
 		
 		for(String feature: featuresFile.list()) {
 			eigenVectors = getMeanSubtractedImage(FeatureExtractor.outputLoc + feature);
@@ -64,8 +64,9 @@ public class Covariance {
 		String finalEmotion = "";
 		
 		try {
-			for(File file: vectorFilesLoc.listFiles()) {
-				trainedImage = (FeatureVectors) FeatureVectors.loadObject(file);
+//			for(File file: vectorFilesLoc.listFiles()) {
+//				trainedImage = (FeatureVectors) FeatureVectors.loadObject(file);
+			for(FeatureVectors trainedImage: TrainingAutomation.vectorsList) {
 				compare(testImage, trainedImage);
 			}
 			
@@ -85,6 +86,7 @@ public class Covariance {
 		for(String emotion: FeatureExtractor.emotions) {
 			System.out.println(emotion + " = " + emotionCount.get(emotion));
 		}
+		System.out.println();
 //		System.out.println("happy = " + emotionCount.get("Happy"));
 //		System.out.println("sad = " + emotionCount.get("Sad"));
 //		System.out.println("neutral = " + emotionCount.get("Neutral"));
@@ -112,7 +114,7 @@ public class Covariance {
 			}
 		}
 	*/	
-		for(int i = 0; i < 4; i++) {	//For each feature
+		for(int i = 0; i < 5; i++) {	//For each feature
 			for(int j = 0; j < 5; j++) {	//For each value
 				double min = Double.MAX_VALUE - 2;
 				for(FeatureVectors vectorFile: distanceMap.keySet()) {	//For each file
@@ -155,7 +157,7 @@ public class Covariance {
 		trainedImageVectors = trainedImage.getMouth();
 		distanceVector = getDistanceVector(testImageVectors, trainedImageVectors);
 		distanceVectors.add(distanceVector);
-		System.out.println();//debug
+//		System.out.println();//debug
 		
 		//MouthNose
 		testImageVectors = testImage.getMouthNose();
@@ -180,9 +182,9 @@ public class Covariance {
 //			distanceVector[i] = Math.sqrt(distanceVector[i]);
 		}
 		
-		for(int i = 0; i < distanceVector.length; i++)
-			System.out.print(distanceVector[i] + "\t");
-		System.out.println();
+//		for(int i = 0; i < distanceVector.length; i++)
+//			System.out.print(distanceVector[i] + "\t");
+//		System.out.println();
 		
 		return distanceVector;
 	}
@@ -201,9 +203,9 @@ public class Covariance {
 			distanceVector[i] = Math.sqrt(distanceVector[i]);
 		}
 		
-		for(int i = 0; i < distanceVector.length; i++)
-			System.out.print(distanceVector[i] + "\t");
-		System.out.println();
+//		for(int i = 0; i < distanceVector.length; i++)
+//			System.out.print(distanceVector[i] + "\t");
+//		System.out.println();
 		
 		return distanceVector;
 	}
@@ -273,11 +275,29 @@ public class Covariance {
 		for(i=0,j=0;j < 5;i++,j++)
 		{
 			finalEigen[j] = eigen[i];
+			
 		}
 		
-		return finalEigen;
+		//return finalEigen;
+		 return normalizedEigen(finalEigen);
 	}
 
+	public double[][] normalizedEigen(double[][] finalEigen) {
+		
+		double length;
+		for(double[] eigenVector: finalEigen) {
+			length = 0;
+			int i;
+			for(i=0;i<eigenVector.length;i++) {
+				length += Math.pow(eigenVector[i],2);
+			}
+			length = Math.sqrt(length);
+			for(i=0;i<eigenVector.length;i++) {
+				eigenVector[i] = eigenVector[i]/length;
+			}
+		}
+		return finalEigen;
+	}
 	private void getColumnMean(int cols,int rows) {
 		// TODO Auto-generated method stub
 		System.out.println("in getColumnMean");
