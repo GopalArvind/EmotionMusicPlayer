@@ -85,7 +85,10 @@ public class FeatureExtractor {
 				"Happy",
 				"Sad",
 				"Anger",
-				"Neutral"};
+				"Neutral",
+				"Surprise",
+				"Disgust",
+				"Fear"};
 		
 		features = new String[] {
 				"LeftEye",
