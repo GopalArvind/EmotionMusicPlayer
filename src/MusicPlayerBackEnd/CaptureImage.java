@@ -1,5 +1,4 @@
 package MusicPlayerBackEnd;
-
 import org.bytedeco.javacpp.opencv_core.IplImage;
 
 import static org.bytedeco.javacpp.opencv_core.cvFlip;
@@ -8,6 +7,8 @@ import static org.bytedeco.javacpp.opencv_highgui.cvSaveImage;
 import org.bytedeco.javacv.*;
 
 public class CaptureImage {
+	public static boolean executing = true;
+	
     public static void captureFrame() {
         // 0-default camera, 1 - next...so on
     	System.out.println("In Capture Frame function:");
@@ -20,7 +21,7 @@ public class CaptureImage {
         		IplImage img = grabber.grab();
         		if (img != null) {
         			System.out.println("Image captured");
-  //      			cvFlip(img,img,1);
+        			cvFlip(img,img,1);
         				if(cvSaveImage(FeatureExtractor.testImagesLoc + "capture.jpg", img) == 1) {
         					System.out.println("Image saved");
         					done = true;
@@ -36,16 +37,22 @@ public class CaptureImage {
     }
     
     public static void timer() {
+    	TrainingAutomation.loadVectorsList();
     	EmotionDetector ed = new EmotionDetector();
     	
-    	while(true) {
+    	while(executing) {
+    		
     		try {
-				Thread.sleep(1000 * 60 * 2);
-				captureFrame();
-	    		ed.start(true);
+				Thread.sleep(1000 * 60*3);
+				if(executing)
+				{
+				   captureFrame();
+	    		   ed.start(true);
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+    		
     	}
     }
         
