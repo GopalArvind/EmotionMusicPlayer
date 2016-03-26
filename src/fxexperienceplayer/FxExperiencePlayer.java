@@ -1,5 +1,8 @@
 package fxexperienceplayer;
+
 import emotiondetector.*;
+
+import emotiondetector.EmotionDetector;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
@@ -47,9 +50,9 @@ import javafx.util.Pair;
  */
 public class FxExperiencePlayer extends Application {
 	
-	public String detectedEmotion;
+	public String detectedEmotion ;
     private PlayList playList = new PlayList();
-    private int curreentSongIndex = 0;
+    public static int curreentSongIndex = -1;
     private MediaPlayer mediaPlayer;
     private Slider[] sliders = new Slider[10];
     private Slider balanceKnob, volumeKnob;
@@ -79,6 +82,7 @@ public class FxExperiencePlayer extends Application {
         Button prevBtn = new Button();
         prevBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent event) {
+            	System.out.println("Prev button pressed");
                 if (curreentSongIndex > 0) {
                     curreentSongIndex --;
                     play(curreentSongIndex);
@@ -89,26 +93,26 @@ public class FxExperiencePlayer extends Application {
         Button nextBtn = new Button();
         nextBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent event) {
-            	if(detectedEmotion.equals(EmotionDetector.emotionOfFace) == false ) {
-            		detectedEmotion = EmotionDetector.emotionOfFace;
-            		loadAppropriatePlaylist(detectedEmotion);
-            	}
-            	else if (curreentSongIndex < playList.getSongs().size()) {
+            	System.out.println("Next button pressed");
+            	if (curreentSongIndex < playList.getSongs().size()-1) {
                     curreentSongIndex ++;
                     play(curreentSongIndex);
                 }
-                
             }
         });
         
         Button playPauseBtn = new Button();
         playPauseBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent event) {
-                if (mediaPlayer == null) {
+            	System.out.println("play/pause button pressed");
+            	if (mediaPlayer == null) {
+            		System.out.println("media player is null");
                     play(curreentSongIndex);
                 } else if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+                	System.out.println("media player about to pause");
                     mediaPlayer.pause();
                 } else {
+                	System.out.println("in the last condition");
                     mediaPlayer.play();
                 }
             }
@@ -117,14 +121,16 @@ public class FxExperiencePlayer extends Application {
         Button loadBtn = new Button();
         loadBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent event) {
-                LoadDialog.loadPlayList(playList, primaryStage);
+            	System.out.println("load button pressed");
+            	LoadDialog.loadPlayList(playList, primaryStage);
             }
         });
         
         Button powerBtn = new Button();
         powerBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent event) {
-                if (mediaPlayer != null) {
+            	System.out.println("power button pressed");
+            	if (mediaPlayer != null) {
                     mediaPlayer.stop();
                 }
                 Platform.exit();
@@ -275,8 +281,12 @@ public class FxExperiencePlayer extends Application {
         // listen for when we have songs
         playList.getSongs().addListener(new ListChangeListener<Pair<String,String>>() {
             @Override public void onChanged(Change<? extends Pair<String,String>> arg0) {
+            	System.out.println("Playlist modified");
+					if(!playList.flag)
+							return;
                 if (!playList.getSongs().isEmpty()) {
-                    curreentSongIndex = 0;
+                	
+                    curreentSongIndex ++;
                     play(curreentSongIndex);
                 } else {
                     trackLabel.setText("No songs found");
@@ -290,17 +300,21 @@ public class FxExperiencePlayer extends Application {
                     leftVU.set(0);
                     rightVU.set(0);
                 }
+              //System.out.println("executing notify on songs");
             }
         });
+     //   String fileName = FxExperiencePlayer.class.getResource("happy.xml").toExternalForm();
+     //   playList.load(fileName);
         // load initial playlist
-       // String fileName = FxExperiencePlayer.class.getResource("images/vallabha.mp3").toExternalForm();
-//      playList.load("http://www.archive.org/download/their_finest_hour_vol3/their_finest_hour_vol3_files.xml");
-        detectedEmotion = EmotionDetector.emotionOfFace;
-        loadAppropriatePlaylist(detectedEmotion);
+        //loadAppropriatePlaylist(EmotionDetector.emotionOfFace);
+   //  playList.load("http://www.archive.org/download/their_finest_hour_vol3/their_finest_hour_vol3_files.xml");
+        loadAppropriatePlaylist( "Happy");
     }
     
-    private void play(int songIndex) {
+    private void play(final int songIndex) {
+    	System.out.println("in play music function");
         if (mediaPlayer != null ) {
+        	System.out.println("clearing the last song data");
             mediaPlayer.stop();
             mediaPlayer.setAudioSpectrumListener(null);
             for (int i=0; i<10; i++) vuMeters[i].setValue(0);
@@ -310,13 +324,36 @@ public class FxExperiencePlayer extends Application {
         final Media media = new Media(playList.getSongs().get(songIndex).getValue());
         mediaPlayer = new MediaPlayer(media);
         mediaPlayer.setAutoPlay(true);
+        
+        mediaPlayer.setOnEndOfMedia(new Runnable() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				if(EmotionDetector.emotionOfFace!=null) {
+				  if(detectedEmotion.equals(EmotionDetector.emotionOfFace) == false ) {
+            		detectedEmotion = EmotionDetector.emotionOfFace;
+                    loadAppropriatePlaylist(detectedEmotion);
+            	  }
+				}
+				else {
+					loadAppropriatePlaylist("Sad");
+				}
+				if(songIndex == playList.getSongs().size()-1) {
+				    play(0);
+				} else {
+					play(songIndex + 1);
+				}
+			}
+        	
+        });
         mediaPlayer.setOnError(new Runnable() {
             @Override public void run() {
                 System.out.println("mediaPlayer.getError() = " + mediaPlayer.getError());
             }
         });
-        trackLabel.setText("Track "+(curreentSongIndex+1)+"/"+playList.getSongs().size());
-        nameLabel.setText(playList.getSongs().get(curreentSongIndex).getKey());
+        trackLabel.setText("Track "+(songIndex+1)+"/"+playList.getSongs().size());
+        nameLabel.setText(playList.getSongs().get(songIndex).getKey());
         timeLabelValue.bind(new StringBinding() {
             { bind(mediaPlayer.currentTimeProperty(), media.durationProperty(), mediaPlayer.statusProperty()); }
             @Override protected String computeValue() {
@@ -332,7 +369,7 @@ public class FxExperiencePlayer extends Application {
                                     "   Remaining: "+formatDuration(media.getDuration().subtract(mediaPlayer.getCurrentTime()))+
                                     "   Total: "+formatDuration(media.getDuration());
                         }
-				case PAUSED:
+                    case PAUSED:
                         return "Paused";
                     default:
                         return "Streaming...";
@@ -349,26 +386,26 @@ public class FxExperiencePlayer extends Application {
         mediaPlayer.setAudioSpectrumNumBands(10);
         mediaPlayer.setAudioSpectrumListener(spectrumListener);
         mediaPlayer.setAudioSpectrumInterval(1d/30d);
-       
     }
-     void loadAppropriatePlaylist(String detectedEmotion) {
-    	
-    	 if(detectedEmotion.equals("Happy") == true) {
-             String fileName = FxExperiencePlayer.class.getResource("happy.xml").toExternalForm();
-             System.out.println(fileName);
-             playList.load(fileName);
-           }
-           else if(detectedEmotion.equals("Sad") == true) {
-           	String fileName = FxExperiencePlayer.class.getResource("sad.xml").toExternalForm();
-               System.out.println(fileName);
-               playList.load(fileName);
-           }
-           else {
-           	 String fileName = FxExperiencePlayer.class.getResource("happy.xml").toExternalForm();
-                System.out.println(fileName);
-                playList.load(fileName);
-           }
-     }
+   void loadAppropriatePlaylist(String detectedEmotion) {
+	   
+	   String fileName;
+	   if (detectedEmotion.equals("Happy")) {
+		   
+		   fileName = FxExperiencePlayer.class.getResource("happy.xml").toExternalForm();
+	   } else if (detectedEmotion.equals("Sad")) {
+		   
+		    fileName = FxExperiencePlayer.class.getResource("sad.xml").toExternalForm();
+	      
+
+	   } else if (detectedEmotion.equals("Anger")) {
+		   fileName = FxExperiencePlayer.class.getResource("Anger.xml").toExternalForm();
+	   }
+	   else {
+		   fileName = FxExperiencePlayer.class.getResource("happy.xml").toExternalForm();
+	   }
+	   playList.load(fileName);
+   }
     
     /** @param args the command line arguments */
     public static void main(String[] args) {
@@ -383,9 +420,7 @@ public class FxExperiencePlayer extends Application {
           		CaptureImage.timer();
           	}
           }).start();
-    	 
-    	launch(args);
-    	
+        launch(args);
     }
     
 }

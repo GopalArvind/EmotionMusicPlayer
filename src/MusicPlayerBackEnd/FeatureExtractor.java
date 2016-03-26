@@ -14,7 +14,7 @@
  * 
  */
 
-
+package MusicPlayerBackEnd;
 
 
 import static org.bytedeco.javacpp.opencv_core.IPL_DEPTH_8U;
@@ -41,22 +41,28 @@ import org.opencv.objdetect.CascadeClassifier;
 
 
 public class FeatureExtractor {
-	private final String testImagesLoc = "TestImages/";
-	private final String cacheLoc = "Cache/";
-	private final String outputLoc = "Output/";
-	private final String classifierLoc = "C:\\Users\\Akash\\OpenCV\\opencv\\sources\\data\\haarcascades\\";
-	private final String faceWithFeaturesFilename = cacheLoc + "faceWithFeatures.png";
-	private final String faceClassifier = "haarcascade_frontalface_alt.xml";
-	private final String leftEyeClassifier = "haarcascade_lefteye_2splits.xml";
-	private final String rightEyeClassifier = "haarcascade_righteye_2splits.xml";
-	private final String noseClassifier = "haarcascade_mcs_nose.xml";
-	private final String mouthClassifier = "haarcascade_mcs_mouth.xml";
-	private final String mouthNoseClassifier = "MouthNose.xml";
+	public static final String testImagesLoc = "TestImages/";
+	public static final String cacheLoc = "Cache/";
+	public static final String outputLoc = "Output/";
+	public static final String classifierLoc = "C:\\Users\\Akash\\OpenCV\\opencv\\sources\\data\\haarcascades\\";
+	public static final String faceWithFeaturesFilename = cacheLoc + "faceWithFeatures.png";
+	public static final String vectorsFileLoc = "Vectors/"; 
+	public static final String faceClassifier = "haarcascade_frontalface_alt.xml";
+	public static final String leftEyeClassifier = "haarcascade_lefteye_2splits.xml";
+	public static final String rightEyeClassifier = "haarcascade_righteye_2splits.xml";
+	public static final String noseClassifier = "haarcascade_mcs_nose.xml";
+	public static final String mouthClassifier = "haarcascade_mcs_mouth.xml";
+	public static final String mouthNoseClassifier = "MouthNose.xml";
 	
 	private String[] classifierFiles;
 	private CvSize[] dimensions;
 	private Rect[] partsOfFace;
 	private static int featureCount = 0;
+	public static String[] emotions;
+	private String[] features;
+	private boolean faceImage;
+	private boolean validImage;
+	private Rect mouthRect, noseRect;
 	
 	private Mat faceWithFeatures;
 	
@@ -75,11 +81,36 @@ public class FeatureExtractor {
 				cvSize(90, 60),	//mouth
 				cvSize(95, 120)};	//noseMouth
 		
+		emotions = new String[] {
+				"Happy",
+				"Sad",
+				"Anger",
+				"Neutral",
+				"Surprise",
+				"Disgust",
+				"Fear"};
+		
+		features = new String[] {
+				"LeftEye",
+				"RightEye",
+				"Nose",
+				"Mouth",
+				"MouthNose"};
+		
 		//partsOfFace = new Rect[4];
 		
 		createDirectory(testImagesLoc);
 		createDirectory(cacheLoc);
 		createDirectory(outputLoc);
+		createDirectory(vectorsFileLoc);
+		
+		faceImage = false;
+		validImage = true;
+		
+/*		for(String emotion: emotions) {
+			createDirectory(vectorsFileLoc + emotion + "/");
+		}
+*/
 	}
 	
 	public void createDirectory(String directory) {
@@ -89,16 +120,70 @@ public class FeatureExtractor {
 		}
 	}
 	
-	public void start() {
+	public void clearDirectory(String directory) {
+		File file = new File(directory);
+		for(File image: file.listFiles()) {
+			image.delete();
+		}
+	}
+	
+	public boolean start(String imagePath) {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.out.println("Running FaceDetector");
         
-        Mat image = Highgui.imread(testImagesLoc + "5.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-        faceWithFeatures = image; 
-        MatOfRect faceDetections = detectFeature(faceClassifier, image);
-        System.out.println(String.format("Detected %s faces.", faceDetections.toArray().length));
+        clearDirectory(cacheLoc);
+        clearDirectory(outputLoc);
         
-        extractFeatures(faceDetections, image, -1);		//Plan this. This method may have to return stuff in the future according to requirements.
+        faceImage = false;
+        validImage = true;
+//        Mat image = Highgui.imread(testImagesLoc + "webcam-toy-photo4.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+        Mat image = Highgui.imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE);
+        faceWithFeatures = image; 
+       
+        if(imagePath.contains("TF")) {	//WORKAROUND FOR FACE-ONLY IMAGES!
+        	faceImage = true;
+        	
+        	System.out.println("Face Image.");
+        	String filename = cacheLoc + FeatureExtractor.featureCount + ".png";
+			
+			//Writing feature to a new file.
+			System.out.println(String.format("Writing feature to %s.", filename));
+			Highgui.imwrite(filename, image);
+		
+			FeatureExtractor.featureCount++;
+			
+			faceWithFeatures = image.clone();	//Cloning to avoid having rectangles in cropped features.
+			System.out.println("Cloning.");
+			int counter = -1;
+			for(String classifier: classifierFiles) {
+				System.out.println("Using classifier: " + classifier);
+				//Add code to fix faulty classifiers here (mount, mouthNose)
+				
+				MatOfRect features = detectFeature(classifier, image);
+				counter++;
+				
+				if(features.toArray().length < 1) {
+					return false;
+				}
+				
+				extractFeatures(features, image, counter);
+			}
+        }
+        
+        //Old code...
+        else {
+        	MatOfRect faceDetections = detectFeature(faceClassifier, image);
+        	System.out.println(String.format("Detected %s faces.", faceDetections.toArray().length));
+        	
+        	if(faceDetections.toArray().length < 1) {
+        		return false;
+        	}
+        
+        	extractFeatures(faceDetections, image, -1);		//Plan this. This method may have to return stuff in the future according to requirements.
+        }
+        
+        return validImage;
+        
        /*
      //REMOVE!!   
         Rect r = faceDetections.toArray()[0];
@@ -139,11 +224,15 @@ public class FeatureExtractor {
 				for(String classifier: classifierFiles) {
 					System.out.println("Using classifier: " + classifier);
 					//Add code to fix faulty classifiers here (mount, mouthNose)
-					
-					MatOfRect features = detectFeature(classifier, subImage);
+					MatOfRect features = detectFeature(classifier, subImage);					
 					counter++;
 					
 					extractFeatures(features, subImage, counter);	//Feature extracted is not face, cuz counter > 0. Functionality in next level of recursion, in else block.
+					
+					if(features.toArray().length < 1) {
+						validImage = false;
+						break;
+					}
 				}
 			}
 			else {
@@ -151,7 +240,8 @@ public class FeatureExtractor {
 				IplImage destination = cvCreateImage(dimensions[counter], IPL_DEPTH_8U, source.nChannels());
 				cvResize(source, destination);
 				
-				cvSaveImage("Output/" + classifierFiles[counter].substring(0, classifierFiles[counter].length() - 3) + "png", destination);
+//				cvSaveImage("Output/" + classifierFiles[counter].substring(0, classifierFiles[counter].length() - 3) + "png", destination);
+				cvSaveImage(outputLoc + features[counter] + ".png", destination);	//Feature filenames will be more meaningful now.
 			}
 		}
 	}
@@ -160,7 +250,17 @@ public class FeatureExtractor {
 		CascadeClassifier featureDetector = new CascadeClassifier(classifierLoc + classifier);
 		
 		MatOfRect featureDetections = new MatOfRect();
-		featureDetector.detectMultiScale(image, featureDetections);
+		if(classifier.equalsIgnoreCase(mouthNoseClassifier)) {
+			int height = mouthRect.y + mouthRect.height - noseRect.y;
+			Rect r = new Rect(mouthRect.x, noseRect.y, mouthRect.width, height);
+			ArrayList<Rect> tempList = new ArrayList<Rect>();
+			tempList.add(r);
+			featureDetections.fromList(tempList);
+		}
+		else {
+			featureDetector.detectMultiScale(image, featureDetections);
+		}
+		
 		featureDetections = validateFeatures(classifier, image, featureDetections);
 		
 		saveFeatures(featureDetections, image);
@@ -180,18 +280,18 @@ public class FeatureExtractor {
 //				validFeatures.push_back(rect);
 				featureRects.add(rect);
 			}
-			else if(classifier.equals(leftEyeClassifier)) {
+			else if(classifier.equals(rightEyeClassifier)) {
 				//Check if feature is in correct quadrant and add to validFeatures.
-				if(rect.x <= image.width()/2 && rect.y <= image.height()/2) {	//Considering only the left-most point for now.
+				if(rect.x <= image.width()/2 && rect.y <= image.height()/2) {	//Considering only the right-most point for now.
 //					validFeatures.push_back(rect);
-					System.out.println("left:" + classifier);
+					System.out.println("right:" + classifier);
 					featureRects.add(rect);
 				}
 			}
-			else if(classifier.equals(rightEyeClassifier)) {
-				if(rect.x >= image.width()/2 && rect.y <= image.height()/2) {
+			else if(classifier.equals(leftEyeClassifier)) {
+				if(rect.x + rect.width >= image.width()/2 && rect.y <= image.height()/2) {
 //					validFeatures.push_back(rect);
-					System.out.println("right:" + classifier);
+					System.out.println("left:" + classifier);
 					featureRects.add(rect);
 				}
 			}
@@ -201,22 +301,26 @@ public class FeatureExtractor {
 				if(d < maxDist) {
 					maxDist = d;
 					validFeature =  rect;
+					noseRect = rect;
 					System.out.println("nose:" + classifier);
 				}
 			}
 			else if(classifier.equals(mouthClassifier)) {
 				if(rect.y >= image.height()/2) {
-					int d = (int) (Math.sqrt(Math.pow(rect.x + rect.width/2 - image.width()/2, 2) + Math.pow(rect.y + rect.height/2 - image.height()*(3/4), 2)));
+					int d = (int) (Math.sqrt(Math.pow(rect.x + rect.width/2 - image.width()/2, 2) + Math.pow(rect.y + rect.height/2 - image.height()/(0.8), 2)));
 					//Picks mouth which is closest to center of bottom of face.
 					if(d < maxDist) {
 						maxDist = d;
 						validFeature = rect;
+						mouthRect = rect;
 						System.out.println("mouth:" + classifier);
 					}
 				}
 			}
-			else if(classifier.equals(mouthClassifier)) {
+			else if(classifier.equals(mouthNoseClassifier)) {
 				//Nothing to add here as of now.
+				System.out.println("MouthNose: " + classifier);
+				return featureDetections;
 			}
 		}
 		
@@ -262,7 +366,8 @@ public class FeatureExtractor {
 //		FeatureExtractor.featureCount++;
 	}
 	
-	public static void main(String[] args) {	//Temporary. Will be called by some code on server.
-		new FeatureExtractor().start();
+/*	public static void main(String[] args) {	//Temporary. Will be called by some code on server.
+//		new FeatureExtractor().start();
 	}
+*/
 }

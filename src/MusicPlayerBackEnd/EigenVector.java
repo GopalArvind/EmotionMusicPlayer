@@ -1,5 +1,5 @@
 
-
+package MusicPlayerBackEnd;
 
 
 
@@ -72,19 +72,19 @@ public class EigenVector{
 			}
 		}*/
 		Matrix A=new Matrix(covariance);		
-		System.out.println(" "+ A.getRowDimension() +" "+ A.getColumnDimension());
+//		System.out.println(" "+ A.getRowDimension() +" "+ A.getColumnDimension());
 		A=A.transpose().times(A);
 		EigenvalueDecomposition e=A.eig();
 		Matrix V=e.getV();
 		Matrix D=e.getD();
 		
-		System.out.print("A=");
-		A.print(9, 6);
-		System.out.print("D");
-		D.print(9, 6);
-		System.out.println("D size "+ D.getRowDimension()+" "+D.getColumnDimension());
-		System.out.print("V");
-		V.print(9, 6);
+//		System.out.print("A=");
+//		A.print(9, 6);
+//		System.out.print("D");
+//		D.print(9, 6);
+//		System.out.println("D size "+ D.getRowDimension()+" "+D.getColumnDimension());
+//		System.out.print("V");
+//		V.print(9, 6);
 		//System.out.println("V size "+ V.getRowDimension()+" "+V.getColumnDimension());
 		//System.out.println(V.times(V.transpose()).minus(Matrix.identity(cols,cols)).normInf());
 		//System.out.println("av=dv");
